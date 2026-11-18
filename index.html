@@ -1,0 +1,2296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ApostilaLab AI — Estúdio Editorial de Apostilas Técnicas e Didáticas</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Plus Jakarta Sans, Newsreader (Editorial Serif), JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- html2pdf.js Bundle -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Newsreader"', 'Georgia', 'serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#EFF6FF',
+              100: '#DBEAFE',
+              500: '#2563EB',
+              600: '#1D4ED8',
+              700: '#1E40AF',
+              800: '#1E3A8A',
+              900: '#172554',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F1F5F9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
+    }
+
+    /* Editorial Stage Background */
+    .stage-bg {
+      background-color: #E2E8F0;
+      background-image: radial-gradient(#CBD5E1 1.25px, transparent 1.25px);
+      background-size: 20px 20px;
+    }
+
+    /* A4 Sheet Styling on Screen */
+    .a4-document-container {
+      width: 100%;
+      max-width: 210mm;
+      margin: 0 auto;
+    }
+
+    .a4-sheet {
+      background: #FFFFFF;
+      width: 100%;
+      min-height: 297mm;
+      padding: 20mm 18mm 20mm 18mm;
+      margin-bottom: 28px;
+      box-shadow: 0 20px 35px -10px rgba(15, 23, 42, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.06);
+      border-radius: 4px;
+      position: relative;
+      box-sizing: border-box;
+      color: #0F172A;
+    }
+
+    @media (max-width: 768px) {
+      .a4-sheet {
+        padding: 24px 20px;
+        min-height: auto;
+      }
+    }
+
+    /* Editable Elements Focus & Hover Affordance */
+    [contenteditable="true"] {
+      outline: none;
+      transition: background-color 0.15s ease, box-shadow 0.15s ease;
+      border-radius: 3px;
+    }
+    [contenteditable="true"]:hover {
+      background-color: rgba(37, 99, 235, 0.035);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.08);
+    }
+    [contenteditable="true"]:focus {
+      background-color: rgba(37, 99, 235, 0.05);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.35);
+    }
+
+    /* Editorial Typography inside A4 */
+    .editorial-prose p {
+      font-family: 'Newsreader', Georgia, serif;
+      font-size: 11.5pt;
+      line-height: 1.72;
+      color: #1E293B;
+      margin-bottom: 0.95em;
+      text-align: justify;
+    }
+
+    /* Avoid breaking critical elements across PDF pages */
+    .avoid-break {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .html2pdf__page-break {
+      height: 0;
+      page-break-before: always;
+      break-before: page;
+    }
+
+    /* Strict Print & Native PDF Styles */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 14mm 15mm 14mm 15mm;
+      }
+
+      html, body {
+        background: #FFFFFF !important;
+        color: #000000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        overflow: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      /* Hide UI Chrome */
+      .no-print {
+        display: none !important;
+      }
+
+      #app-layout,
+      #main-stage,
+      #preview-scroll-area {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      .a4-document-container {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+      }
+
+      .a4-sheet {
+        box-shadow: none !important;
+        border: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        min-height: 0 !important;
+        width: 100% !important;
+        page-break-after: always;
+        break-after: page;
+      }
+
+      .a4-sheet:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
+      .avoid-break {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+      }
+
+      h1, h2, h3, h4 {
+        break-after: avoid !important;
+        page-break-after: avoid !important;
+      }
+
+      [contenteditable="true"]:hover,
+      [contenteditable="true"]:focus {
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 font-sans antialiased selection:bg-brand-100 selection:text-brand-800 h-screen overflow-hidden flex flex-col">
+
+  <!-- TOP NAVIGATION & EXPORT BAR (Hidden on Print) -->
+  <header class="no-print h-16 bg-white border-b border-slate-200 px-4 lg:px-6 flex items-center justify-between shrink-0 z-30">
+    <div class="flex items-center gap-3">
+      <button id="mobile-sidebar-toggle" onclick="toggleMobileSidebar()" class="lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100" title="Abrir Painel de Configuração">
+        <i class="ph ph-sliders-horizontal text-xl"></i>
+      </button>
+      <div class="w-10 h-10 rounded-xl bg-brand-700 text-white flex items-center justify-center shadow-sm shadow-brand-700/20">
+        <i class="ph-fill ph-book-open-text text-xl"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-bold text-slate-900 text-base sm:text-lg tracking-tight leading-none">ApostilaLab <span class="text-brand-700">AI</span></h1>
+          <span class="hidden sm:inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 border border-brand-100 font-semibold">
+            Edição GitHub Pages
+          </span>
+        </div>
+        <p class="text-xs text-slate-500 hidden sm:block mt-0.5">Gerador de Apostilas Técnicas e Didáticas com Editor A4 Interativo</p>
+      </div>
+    </div>
+
+    <!-- Center Editorial Status Pill -->
+    <div class="hidden xl:flex items-center gap-2 bg-slate-50 border border-slate-200/80 px-3.5 py-1.5 rounded-full text-xs text-slate-600">
+      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+      <span>Modo Edição Direta Ativo (<code class="font-mono text-[11px] text-brand-700">clique em qualquer texto da folha A4 para editar</code>)</span>
+    </div>
+
+    <!-- Right Action Buttons -->
+    <div class="flex items-center gap-2 sm:gap-2.5">
+      <button onclick="openApiKeyPanel()" id="header-api-key-btn" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100" title="Configurar Chave da Gemini API no navegador (GitHub Pages)">
+        <i class="ph-fill ph-key text-base text-amber-600" id="header-api-key-icon"></i>
+        <span id="header-api-key-label" class="hidden md:inline">Chave API</span>
+      </button>
+
+      <button onclick="addNewBlankChapter()" class="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition" title="Inserir um capítulo extra manualmente">
+        <i class="ph ph-plus-circle text-base text-brand-700"></i>
+        <span>+ Capítulo</span>
+      </button>
+
+      <button onclick="exportHtml2Pdf()" id="btn-html2pdf" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-800 bg-white border border-slate-300 hover:bg-slate-50 shadow-sm transition">
+        <i class="ph ph-file-pdf text-base text-rose-600"></i>
+        <span>Baixar PDF <span class="hidden sm:inline text-slate-400 font-normal">(html2pdf)</span></span>
+      </button>
+
+      <button onclick="triggerNativePrint()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-brand-700 hover:bg-brand-800 shadow-sm shadow-brand-700/20 transition">
+        <i class="ph ph-printer text-base"></i>
+        <span>Imprimir / PDF Nativo <span class="hidden sm:inline text-brand-100 font-normal">(Alta Resolução)</span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <div id="app-layout" class="flex-1 flex overflow-hidden relative">
+
+    <!-- LEFT SIDEBAR: CONFIGURATION & INSPIRATION PANEL -->
+    <aside id="config-sidebar" class="no-print w-full sm:w-[400px] lg:w-[430px] bg-white border-r border-slate-200 flex flex-col h-full shrink-0 z-20 absolute lg:static inset-y-0 left-0 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out shadow-xl lg:shadow-none">
+      
+      <!-- Sidebar Top Presets Header -->
+      <div class="px-5 py-3.5 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="ph-fill ph-sparkle text-brand-600"></i>
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-700">Parâmetros da Apostila</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <select id="preset-selector" onchange="loadPresetTemplate(this.value)" class="text-xs bg-white border border-slate-300 rounded-md px-2 py-1 text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-brand-500 max-w-[195px]">
+            <option value="">⚡ Exemplos Rápidos...</option>
+            <option value="vibracao">Análise de Vibração e Manutenção Preditiva</option>
+            <option value="eletrica">Comandos Elétricos e Inversores</option>
+            <option value="alinhamento">Alinhamento a Laser e Mancais</option>
+            <option value="esp32">Automação com ESP32 e IoT</option>
+            <option value="solar">Energia Solar Fotovoltaica</option>
+            <option value="enfermagem">Saúde: Biossegurança e UTI</option>
+          </select>
+          <button onclick="toggleMobileSidebar()" class="lg:hidden p-1 text-slate-500 hover:text-slate-800">
+            <i class="ph ph-x text-lg"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Scrollable Form Body -->
+      <div class="flex-1 overflow-y-auto p-5 space-y-5">
+
+        <!-- 0. GERENCIADOR DE API KEY (LOCALSTORAGE - SEGURO PARA GITHUB PAGES) -->
+        <section class="rounded-xl border border-slate-200 bg-slate-50/90 overflow-hidden">
+          <button
+            type="button"
+            onclick="toggleApiKeyAccordion()"
+            class="w-full px-3.5 py-2.5 flex items-center justify-between text-left hover:bg-slate-100/80 transition"
+          >
+            <div class="flex items-center gap-2">
+              <i class="ph-fill ph-key text-brand-600 text-base"></i>
+              <div>
+                <span class="text-xs font-bold text-slate-800 block leading-tight">Configuração de API Key (GitHub Pages)</span>
+                <span id="sidebar-api-key-status-badge" class="inline-flex items-center gap-1 text-[10px] font-mono font-semibold text-amber-700 mt-0.5">
+                  ● Ambiente Interno / Sem Chave Local
+                </span>
+              </div>
+            </div>
+            <i id="api-key-accordion-chevron" class="ph ph-caret-down text-slate-500 text-sm transition-transform"></i>
+          </button>
+
+          <div id="api-key-accordion-body" class="hidden px-3.5 pb-3.5 pt-2 border-t border-slate-200/80 space-y-2.5 bg-white">
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              Para usar no <strong>GitHub Pages</strong> ou fora do preview, cole sua chave gratuita do <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-brand-600 font-semibold underline">Google AI Studio</a>.
+            </p>
+
+            <div class="relative">
+              <input
+                id="input-user-api-key"
+                type="password"
+                placeholder="AIzaSy..."
+                autocomplete="off"
+                class="w-full pl-3 pr-9 py-2 text-xs font-mono rounded-lg border border-slate-300 focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 outline-none text-slate-800"
+              />
+              <button
+                type="button"
+                onclick="toggleApiKeyVisibility()"
+                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                title="Mostrar / Ocultar Chave"
+              >
+                <i id="api-key-eye-icon" class="ph ph-eye text-base"></i>
+              </button>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                onclick="saveUserApiKey()"
+                class="flex-1 py-1.5 px-3 rounded-lg bg-brand-700 hover:bg-brand-800 text-white font-semibold text-xs inline-flex items-center justify-center gap-1.5 transition shadow-sm"
+              >
+                <i class="ph-bold ph-floppy-disk"></i>
+                <span>Salvar no Navegador</span>
+              </button>
+              <button
+                type="button"
+                onclick="clearUserApiKey()"
+                class="py-1.5 px-3 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-200 font-semibold text-xs inline-flex items-center justify-center gap-1 transition"
+              >
+                <i class="ph ph-trash"></i>
+                <span>Remover</span>
+              </button>
+            </div>
+
+            <div class="p-2 rounded-lg bg-emerald-50/80 border border-emerald-200/80 text-[10px] text-emerald-900 leading-snug flex items-start gap-1.5">
+              <i class="ph-fill ph-shield-check text-emerald-600 text-sm shrink-0 mt-0.5"></i>
+              <span><strong>100% Seguro para GitHub:</strong> Sua chave fica gravada apenas no <code class="font-mono">localStorage</code> deste navegador e jamais é enviada ao código-fonte do GitHub.</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 1. TÍTULO E TEMA -->
+        <section class="space-y-3.5">
+          <div>
+            <label for="input-title" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+              1. Título da Apostila <span class="text-rose-500">*</span>
+            </label>
+            <input
+              id="input-title"
+              type="text"
+              value="Comandos Elétricos, Inversores de Frequência e Manutenção Preditiva"
+              placeholder="Ex: Instalações Elétricas Industriais e NR-10"
+              class="w-full px-3.5 py-2.5 text-sm rounded-lg border border-slate-300 focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 outline-none transition font-medium text-slate-900"
+            />
+          </div>
+
+          <div>
+            <label for="input-topic" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+              Tema / Assunto Detalhado e Escopo <span class="text-rose-500">*</span>
+            </label>
+            <textarea
+              id="input-topic"
+              rows="3"
+              placeholder="Descreva os tópicos essenciais, normas técnicas (ex: ABNT, NR), cálculos, práticas de laboratório ou público-alvo..."
+              class="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 outline-none transition text-slate-800 leading-relaxed"
+            >Dimensionamento e acionamento de motores assíncronos trifásicos, parametrização de inversores de frequência (rampa de aceleração, controle escalar V/f e vetorial), análise de vibração e termografia segundo normas ABNT NBR 5410 e NR-10.</textarea>
+          </div>
+        </section>
+
+        <!-- 2. NÍVEL E QUANTIDADE DE CAPÍTULOS -->
+        <section class="grid grid-cols-2 gap-3 pt-1 border-t border-slate-100">
+          <div>
+            <label for="input-level" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+              Nível Didático
+            </label>
+            <select
+              id="input-level"
+              class="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-300 bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 outline-none font-medium text-slate-800"
+            >
+              <option value="Básico / Introdutório">Básico / Introdutório</option>
+              <option value="Técnico / Industrial" selected>Técnico / Industrial</option>
+              <option value="Avançado / Engenharia">Avançado / Especialização</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="input-chapters" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+              Nº de Capítulos
+            </label>
+            <select
+              id="input-chapters"
+              class="w-full px-3 py-2.5 text-sm rounded-lg border border-slate-300 bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 outline-none font-medium text-slate-800"
+            >
+              <option value="2">2 Capítulos</option>
+              <option value="3" selected>3 Capítulos</option>
+              <option value="4">4 Capítulos</option>
+              <option value="5">5 Capítulos</option>
+            </select>
+          </div>
+        </section>
+
+        <!-- 3. MATERIAL DE INSPIRAÇÃO (ARQUIVOS MULTIMODAIS + NOTAS) -->
+        <section class="space-y-3 pt-3 border-t border-slate-200">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="ph-fill ph-paperclip text-brand-600 text-sm"></i>
+              2. Material de Inspiração (Anexos)
+            </label>
+            <span class="text-[11px] text-slate-400 font-mono">Multimodal</span>
+          </div>
+
+          <!-- Dropzone -->
+          <div
+            id="file-dropzone"
+            onclick="document.getElementById('file-input').click()"
+            class="border-2 border-dashed border-slate-300 hover:border-brand-500 bg-slate-50/70 hover:bg-brand-50/30 rounded-xl p-3.5 text-center cursor-pointer transition group"
+          >
+            <input
+              id="file-input"
+              type="file"
+              multiple
+              accept=".txt,.md,.json,.csv,.png,.jpg,.jpeg,.webp,.pdf"
+              class="hidden"
+              onchange="handleFilesSelected(this.files)"
+            />
+            <div class="flex flex-col items-center justify-center gap-1">
+              <div class="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-brand-600 group-hover:scale-105 transition">
+                <i class="ph ph-upload-simple text-base"></i>
+              </div>
+              <p class="text-xs font-semibold text-slate-700">
+                Clique para anexar ou arraste arquivos
+              </p>
+              <p class="text-[11px] text-slate-500">
+                Suporta <span class="font-mono text-slate-700">.pdf, .png, .jpg, .txt, .md, .csv, .json</span> (enviados via <code class="font-mono">inlineData</code> / texto ao Gemini)
+              </p>
+            </div>
+          </div>
+
+          <!-- Attached Files Pill List -->
+          <div id="attached-files-list" class="space-y-1.5 empty:hidden"></div>
+
+          <!-- Complementary Notes / Paste Area -->
+          <div>
+            <label for="input-notes" class="block text-xs font-semibold text-slate-600 mb-1">
+              Notas Complementares, Ementa ou Transcrição:
+            </label>
+            <textarea
+              id="input-notes"
+              rows="2"
+              placeholder="Cole aqui trechos de apostilas antigas, sumários, normas, dados técnicos ou a transcrição do vídeo..."
+              class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 outline-none transition text-slate-700"
+            ></textarea>
+          </div>
+        </section>
+
+        <!-- 4. INSPIRAÇÃO VIA YOUTUBE -->
+        <section class="space-y-2.5 pt-3 border-t border-slate-200">
+          <label for="input-youtube" class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+            <i class="ph-fill ph-youtube-logo text-rose-600 text-base"></i>
+            3. Vídeo do YouTube (Inspiração)
+          </label>
+
+          <div class="relative">
+            <input
+              id="input-youtube"
+              type="url"
+              oninput="handleYoutubeUrlChange(this.value)"
+              placeholder="Cole a URL: https://www.youtube.com/watch?v=..."
+              class="w-full pl-3.5 pr-9 py-2 text-xs rounded-lg border border-slate-300 focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 outline-none transition font-mono text-slate-800"
+            />
+            <button
+              id="clear-yt-btn"
+              onclick="clearYoutubeInput()"
+              class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              title="Limpar URL"
+            >
+              <i class="ph ph-x-circle text-base"></i>
+            </button>
+          </div>
+
+          <!-- Dynamic YouTube Thumbnail Preview Card -->
+          <div id="youtube-preview-card" class="hidden rounded-xl border border-slate-200 bg-slate-50 overflow-hidden">
+            <div class="flex gap-3 p-2.5 items-center">
+              <img
+                id="youtube-thumb-img"
+                src="https://placehold.co/320x180/1e293b/ffffff?text=YouTube"
+                alt="Miniatura do YouTube"
+                class="w-28 h-16 object-cover rounded-lg border border-slate-200 shrink-0 bg-slate-900"
+                onerror="this.src='https://placehold.co/320x180/1e293b/ffffff?text=Video+YouTube'"
+              />
+              <div class="min-w-0 flex-1">
+                <span class="inline-flex items-center gap-1 text-[10px] font-mono font-semibold uppercase px-1.5 py-0.5 rounded bg-rose-100 text-rose-700">
+                  ID: <span id="youtube-video-id">--</span>
+                </span>
+                <p class="text-xs font-semibold text-slate-800 truncate mt-1">Vídeo vinculado como referência</p>
+                <a id="youtube-external-link" href="#" target="_blank" rel="noopener noreferrer" class="text-[11px] text-brand-600 hover:underline inline-flex items-center gap-1">
+                  Abrir vídeo original <i class="ph ph-arrow-square-out"></i>
+                </a>
+              </div>
+            </div>
+            <!-- Sincere Technical CORS Notice -->
+            <div class="bg-amber-50/90 border-t border-amber-200/80 px-3 py-2 text-[11px] text-amber-900 leading-relaxed flex gap-2 items-start">
+              <i class="ph-fill ph-info text-amber-600 text-sm shrink-0 mt-0.5"></i>
+              <div>
+                <strong>Aviso Técnico (CORS):</strong> Por restrição de segurança de CORS dos navegadores, páginas web não podem baixar diretamente a faixa de áudio oculta do YouTube. O app utiliza o <strong>link/título via Google Search Grounding</strong> para contextualizar o vídeo, ou você pode colar a transcrição no campo de notas acima para fidelidade literal.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. CHAVES SELETORAS (GOOGLE SEARCH & IMAGEN AI) -->
+        <section class="space-y-2.5 pt-3 border-t border-slate-200">
+          <label class="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+            4. Motores Inteligentes (IA)
+          </label>
+
+          <!-- Toggle 1: Google Search Grounding -->
+          <label class="flex items-start justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 cursor-pointer transition">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-1.5">
+                <i class="ph-fill ph-globe-hemisphere-west text-brand-600 text-base"></i>
+                <span class="text-xs font-bold text-slate-800">Pesquisar na Internet (Google Search)</span>
+              </div>
+              <p class="text-[11px] text-slate-500 leading-snug">
+                Fundamenta a apostila com normas reais, dados atualizados da web e lista as fontes consultadas.
+              </p>
+            </div>
+            <div class="relative inline-flex items-center shrink-0 mt-0.5">
+              <input id="toggle-search" type="checkbox" checked class="sr-only peer" />
+              <div class="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600"></div>
+            </div>
+          </label>
+
+          <!-- Toggle 2: Generate AI Illustrations -->
+          <label class="flex items-start justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 cursor-pointer transition">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-1.5">
+                <i class="ph-fill ph-paint-brush-broad text-teal-600 text-base"></i>
+                <span class="text-xs font-bold text-slate-800">Gerar Ilustrações com IA</span>
+              </div>
+              <p class="text-[11px] text-slate-500 leading-snug">
+                Gera automaticamente uma ilustração técnica ou diagrama didático para cada capítulo da apostila.
+              </p>
+            </div>
+            <div class="relative inline-flex items-center shrink-0 mt-0.5">
+              <input id="toggle-images" type="checkbox" checked class="sr-only peer" />
+              <div class="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-600"></div>
+            </div>
+          </label>
+
+          <!-- Seletor de Motor Híbrido de Imagens -->
+          <div class="p-3 rounded-xl border border-slate-200 bg-slate-50/60 space-y-1.5">
+            <label for="input-image-engine" class="block text-xs font-bold text-slate-800 flex items-center justify-between">
+              <span class="flex items-center gap-1.5">
+                <i class="ph-fill ph-cpu text-brand-600 text-sm"></i>
+                Motor de Ilustrações IA
+              </span>
+              <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-200">Base64 PDF-Safe</span>
+            </label>
+            <select
+              id="input-image-engine"
+              class="w-full px-2.5 py-2 text-xs rounded-lg border border-slate-300 bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 outline-none font-medium text-slate-800"
+            >
+              <option value="auto" selected>Automático (Tenta Google Imagen 3 ➔ Fallback IA Gratuita)</option>
+              <option value="free">Motor Gratuito Direto (Pollinations Flux - Sem Billing)</option>
+              <option value="imagen">Forçar Google Imagen 3 / Gemini Image (Requer Billing)</option>
+            </select>
+            <p class="text-[10px] text-slate-500 leading-normal">
+              No modo <strong>Automático</strong> ou <strong>Gratuito</strong>, as imagens são convertidas para <code class="font-mono">Base64 Data URL</code> para exportação limpa no <code class="font-mono">html2pdf</code> sem erro de CORS.
+            </p>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Sticky Bottom Generate CTA -->
+      <div class="p-4 bg-white border-t border-slate-200 space-y-2.5">
+        <!-- Generation Status Box (Hidden when idle) -->
+        <div id="generation-status-box" class="hidden rounded-xl bg-brand-50 border border-brand-200 p-3 space-y-2">
+          <div class="flex items-center justify-between text-xs font-semibold text-brand-800">
+            <span id="generation-status-text" class="flex items-center gap-2">
+              <i class="ph ph-spinner animate-spin text-base"></i>
+              Sintetizando conteúdo técnico...
+            </span>
+            <span id="generation-step-badge" class="font-mono text-[11px] bg-white px-2 py-0.5 rounded border border-brand-200">1/2</span>
+          </div>
+          <div class="w-full h-1.5 bg-brand-100 rounded-full overflow-hidden">
+            <div id="generation-progress-bar" class="h-full bg-brand-600 transition-all duration-300 w-1/3"></div>
+          </div>
+        </div>
+
+        <button
+          id="btn-generate-workbook"
+          onclick="generateWorkbookWithAI()"
+          class="w-full py-3 px-4 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 shadow-md shadow-brand-700/20 flex items-center justify-center gap-2 transition active:scale-[0.99]"
+        >
+          <i class="ph-fill ph-magic-wand text-lg"></i>
+          <span>Gerar Apostila Completa com IA</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- RIGHT MAIN STAGE: INTERACTIVE A4 DOCUMENT EDITOR -->
+    <main id="main-stage" class="flex-1 flex flex-col h-full overflow-hidden stage-bg relative">
+
+      <!-- Floating Notification / Toast Banner (Hidden by default) -->
+      <div id="toast-notification" class="no-print hidden fixed bottom-5 right-5 z-50 max-w-md bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-3 transition-all">
+        <i id="toast-icon" class="ph-fill ph-check-circle text-emerald-400 text-xl shrink-0"></i>
+        <div class="text-xs leading-relaxed flex-1" id="toast-message">Operação realizada com sucesso.</div>
+        <button onclick="hideToast()" class="text-slate-400 hover:text-white">
+          <i class="ph ph-x"></i>
+        </button>
+      </div>
+
+      <!-- Hidden File Input for Per-Chapter Custom Image Upload -->
+      <input
+        id="chapter-custom-image-input"
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+        class="hidden"
+        onchange="handleChapterCustomImageFile(this)"
+      />
+
+      <!-- Scrollable A4 Canvas Area -->
+      <div id="preview-scroll-area" class="flex-1 overflow-y-auto px-3 sm:px-6 md:px-10 py-6 md:py-10">
+        
+        <!-- Quick Helper Toolbar above the A4 Document (Hidden on Print) -->
+        <div class="no-print max-w-[210mm] mx-auto mb-4 flex flex-wrap items-center justify-between gap-2 bg-white/90 backdrop-blur px-4 py-2.5 rounded-xl border border-slate-200/90 shadow-sm text-xs">
+          <div class="flex items-center gap-2 text-slate-600">
+            <i class="ph-fill ph-pencil-simple-line text-brand-600 text-base"></i>
+            <span><strong>Edição A4 Interativa:</strong> Clique em qualquer título, parágrafo, norma ou questão para editar o texto antes de exportar.</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="generateAllMissingImages()" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-teal-50 text-teal-800 hover:bg-teal-100 border border-teal-200 font-semibold transition">
+              <i class="ph ph-images"></i>
+              <span>Gerar Todas as Ilustrações IA</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- THE A4 WORKBOOK CONTAINER (Target for html2pdf & @media print) -->
+        <div id="workbook-a4-root" class="a4-document-container">
+          <!-- Rendered dynamically by renderWorkbookA4() -->
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    /********************************************************************
+     * 1. STATE, API KEY MANAGER (LOCALSTORAGE) & INITIAL SAMPLE WORKBOOK
+     ********************************************************************/
+    const apiKey = ""; // Mantido vazio para injeção automática no ambiente de preview interno
+    const LOCAL_STORAGE_KEY_NAME = "apostilalab_gemini_key";
+
+    let attachedFiles = []; // { id, name, size, mimeType, isText, content, base64Data }
+    let activeChapterImageUploadIndex = null;
+
+    function getEffectiveApiKey() {
+      try {
+        const saved = localStorage.getItem(LOCAL_STORAGE_KEY_NAME);
+        if (saved && saved.trim().length > 0) {
+          return saved.trim();
+        }
+      } catch (e) {
+        console.warn("Acesso ao localStorage indisponível:", e);
+      }
+      return apiKey;
+    }
+
+    function initApiKeyManagerUI() {
+      try {
+        const saved = localStorage.getItem(LOCAL_STORAGE_KEY_NAME);
+        const inputEl = document.getElementById('input-user-api-key');
+        if (saved && inputEl) {
+          inputEl.value = saved.trim();
+        }
+      } catch (e) {}
+      refreshApiKeyStatusIndicators();
+    }
+
+    function refreshApiKeyStatusIndicators() {
+      let hasLocalKey = false;
+      try {
+        const saved = localStorage.getItem(LOCAL_STORAGE_KEY_NAME);
+        hasLocalKey = Boolean(saved && saved.trim().length > 0);
+      } catch (e) {}
+
+      const sidebarBadge = document.getElementById('sidebar-api-key-status-badge');
+      const headerBtn = document.getElementById('header-api-key-btn');
+      const headerIcon = document.getElementById('header-api-key-icon');
+      const headerLabel = document.getElementById('header-api-key-label');
+
+      if (hasLocalKey) {
+        if (sidebarBadge) {
+          sidebarBadge.className = "inline-flex items-center gap-1 text-[10px] font-mono font-semibold text-emerald-700 mt-0.5";
+          sidebarBadge.textContent = "● Chave Salva no Navegador (Ativa)";
+        }
+        if (headerBtn) {
+          headerBtn.className = "inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100";
+        }
+        if (headerIcon) {
+          headerIcon.className = "ph-fill ph-check-circle text-base text-emerald-600";
+        }
+        if (headerLabel) {
+          headerLabel.textContent = "API Key Ativa";
+        }
+      } else {
+        if (sidebarBadge) {
+          sidebarBadge.className = "inline-flex items-center gap-1 text-[10px] font-mono font-semibold text-amber-700 mt-0.5";
+          sidebarBadge.textContent = "● Ambiente Interno / Sem Chave Local";
+        }
+        if (headerBtn) {
+          headerBtn.className = "inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border transition bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100";
+        }
+        if (headerIcon) {
+          headerIcon.className = "ph-fill ph-key text-base text-amber-600";
+        }
+        if (headerLabel) {
+          headerLabel.textContent = "Configurar API Key";
+        }
+      }
+    }
+
+    function toggleApiKeyAccordion(forceOpen) {
+      const body = document.getElementById('api-key-accordion-body');
+      const chevron = document.getElementById('api-key-accordion-chevron');
+      if (!body) return;
+      const isHidden = body.classList.contains('hidden');
+      const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : isHidden;
+
+      if (shouldOpen) {
+        body.classList.remove('hidden');
+        if (chevron) chevron.classList.add('rotate-180');
+      } else {
+        body.classList.add('hidden');
+        if (chevron) chevron.classList.remove('rotate-180');
+      }
+    }
+
+    function openApiKeyPanel() {
+      if (window.innerWidth < 1024) {
+        toggleMobileSidebar(true);
+      }
+      toggleApiKeyAccordion(true);
+      const inputEl = document.getElementById('input-user-api-key');
+      if (inputEl) {
+        setTimeout(() => inputEl.focus(), 150);
+      }
+    }
+
+    function toggleApiKeyVisibility() {
+      const inputEl = document.getElementById('input-user-api-key');
+      const eyeIcon = document.getElementById('api-key-eye-icon');
+      if (!inputEl) return;
+      if (inputEl.type === 'password') {
+        inputEl.type = 'text';
+        if (eyeIcon) eyeIcon.className = 'ph ph-eye-slash text-base';
+      } else {
+        inputEl.type = 'password';
+        if (eyeIcon) eyeIcon.className = 'ph ph-eye text-base';
+      }
+    }
+
+    function saveUserApiKey() {
+      const inputEl = document.getElementById('input-user-api-key');
+      if (!inputEl) return;
+      const val = inputEl.value.trim();
+      if (!val) {
+        showToast("Digite uma chave de API válida (ex: AIzaSy...) antes de salvar.", "warning");
+        return;
+      }
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY_NAME, val);
+        refreshApiKeyStatusIndicators();
+        showToast("Chave da Gemini API salva com segurança no navegador (localStorage)!", "success");
+      } catch (e) {
+        showToast("Não foi possível salvar no localStorage deste navegador.", "error");
+      }
+    }
+
+    function clearUserApiKey() {
+      try {
+        localStorage.removeItem(LOCAL_STORAGE_KEY_NAME);
+        const inputEl = document.getElementById('input-user-api-key');
+        if (inputEl) inputEl.value = '';
+        refreshApiKeyStatusIndicators();
+        showToast("Chave da API removida do navegador.", "info");
+      } catch (e) {}
+    }
+
+    // Rich initial technical workbook so the user can immediately inspect, edit, or print
+    let currentWorkbook = {
+      titulo: "Comandos Elétricos, Inversores de Frequência e Manutenção Preditiva",
+      subtitulo: "Apostila Técnica de Capacitação Industrial — Dimensionamento, Acionamentos Eletrônicos e Diagnóstico de Ativos segundo ABNT NBR 5410 e NR-10",
+      nivel: "Técnico / Industrial",
+      dataGeracao: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
+      resumo_executivo: "Esta apostila técnica aborda de forma integrada os fundamentos e práticas avançadas de acionamento de máquinas elétricas rotativas em plantas industriais modernas. Ao longo dos capítulos, estuda-se a arquitetura construtiva dos motores de indução trifásicos, as estratégias de controle escalar (V/f) e controle vetorial em inversores de frequência, bem como os protocolos de manutenção preditiva baseados em termografia infravermelha e análise espectral de vibrações mecânicas.",
+      fontes_web: [
+        { title: "ABNT NBR 5410 — Instalações Elétricas de Baixa Tensão", uri: "https://www.abnt.org.br" },
+        { title: "NR-10 — Segurança em Instalações e Serviços em Eletricidade", uri: "https://www.gov.br/trabalho-e-emprego" }
+      ],
+      capitulos: [
+        {
+          titulo: "Motores Assíncronos Trifásicos e Dimensionamento de Partida",
+          conteudo: [
+            "Os motores de indução trifásicos com rotor tipo gaiola de esquilo representam mais de 85% da força motriz instalada na indústria de transformação devido à sua robustez mecânica, simplicidade construtiva e baixo custo de manutenção. O princípio de funcionamento fundamenta-se na criação de um campo magnético girante no estator, cuja velocidade síncrona (Ns) é diretamente proporcional à frequência da rede elétrica (f) e inversamente proporcional ao número de polos magnéticos (P), expressa pela equação Ns = (120 × f) / P.",
+            "Durante a partida direta à plena tensão, a corrente de rotor bloqueado (Ip/In) pode atingir valores entre 6 e 9 vezes a corrente nominal do motor, provocando quedas transitórias de tensão nos barramentos alimentadores e esforços eletrodinâmicos severos nas cabeças de bobina. Por esse motivo, o correto dimensionamento do sistema de proteção — englobando disjuntores motor termomagnéticos, contatores de potência categoria AC-3 e relés de sobrecarga — deve respeitar rigorosamente o fator de serviço (FS) e o regime de trabalho (S1 a S8).",
+            "A leitura e interpretação dos dados de placa do motor, padronizados pela norma ABNT NBR 17094, incluem o grau de proteção IP (Ingress Protection), a classe de isolamento térmico (classes B, F ou H) e o rendimento energético mínimo exigido para motores de alto rendimento (IR3 Premium)."
+          ],
+          quadro_destaque: "NORMA TÉCNICA (ABNT NBR 5410 / NR-10): Em motores com potência superior a 5 CV alimentados em redes públicas de baixa tensão, deve-se limitar a corrente de partida utilizando chaves compensadoras, partida estrela-triângulo, soft-starters ou inversores de frequência, garantindo que a queda de tensão nos terminais não ultrapasse 5% em regime permanente.",
+          prompt_imagem: "Clean technical engineering cross-section diagram of a three-phase induction electric motor showing stator windings, squirrel-cage rotor, cooling fan, and terminal box, blueprint educational textbook illustration style, white background, high contrast",
+          imagem_url: null,
+          gerando_imagem: false,
+          legenda_imagem: "Figura 1.1 — Arquitetura construtiva e elementos eletromagnéticos do motor de indução trifásico.",
+          questoes: [
+            {
+              pergunta: "Calcule a velocidade síncrona (Ns) de um motor trifásico de 4 polos conectado a uma rede industrial de 60 Hz e explique o conceito de escorregamento (s) quando o rotor gira a 1746 RPM.",
+              gabarito: "Aplicando Ns = (120 × 60) / 4 = 1800 RPM. O escorregamento é dado por s = ((Ns - Nr) / Ns) × 100 = ((1800 - 1746) / 1800) × 100 = 3,0%. O escorregamento é indispensável para que haja movimento relativo entre o campo girante e os condutores do rotor, induzindo corrente e conjugado eletromagnético."
+            },
+            {
+              pergunta: "Qual a diferença operacional entre os contatos de força categoria AC-1 e AC-3 em um contator eletromecânico?",
+              gabarito: "A categoria AC-1 aplica-se a cargas puramente resistivas ou com fator de potência >= 0,95 (ex: bancos de aquecimento). Já a categoria AC-3 é projetada para partida e desligamento de motores de gaiola em regime, suportando picos de corrente de partida de até 8x In sem soldagem dos contatos."
+            }
+          ]
+        },
+        {
+          titulo: "Inversores de Frequência: Controle Escalar (V/f) e Vetorial",
+          conteudo: [
+            "O inversor de frequência (VFD — Variable Frequency Drive) é um conversor estático de potência capaz de controlar continuamente a velocidade e o conjugado de motores CA através da variação simultânea da frequência e da amplitude da tensão aplicada ao estator. Sua topologia clássica divide-se em três estágios: ponte retificadora trifásica (diodos ou tiristores), barramento CC intermediário com banco de capacitores eletrolíticos de filtragem, e ponte inversora composta por transistores IGBT chaveados por modulação PWM (Pulse Width Modulation).",
+            "No modo de controle escalar (V/f constante), o inversor mantém a razão entre tensão e frequência constante até a frequência nominal (60 Hz), preservando o fluxo magnético de entreferro nominal e disponibilizando conjugado constante. Acima da frequência base, a tensão permanece limitada ao valor nominal da rede e o motor ingressa na região de enfraquecimento de campo, onde a potência permanece constante mas o torque decai proporcionalmente ao inverso da frequência.",
+            "Para aplicações industriais que exigem elevado torque em baixíssimas rotações (como pontes rolantes, extrusoras e elevadores de carga), adota-se o controle vetorial (Sensorless ou com Encoder incremental). Nesse algoritmo, o processador DSP decompõe matematicamente a corrente estatórica em duas componentes ortogonais independentes: a corrente produtora de fluxo magnético (Id) e a corrente produtora de torque (Iq)."
+          ],
+          quadro_destaque: "DICA PRÁTICA DE COMISSIONAMENTO: Ao instalar cabos de potência entre o inversor e o motor com comprimentos superiores a 50 metros, utilize cabos blindados simétricos e instale reatores de carga (dV/dt) na saída do inversor para mitigar ondas refletidas que podem perfurar o esmalte isolante das primeiras espiras do motor.",
+          prompt_imagem: "Technical block diagram of an industrial Variable Frequency Drive VFD showing 3-phase AC rectifier, DC link capacitor bank, and IGBT PWM inverter stage connected to an electric motor, textbook vector diagram style",
+          imagem_url: null,
+          gerando_imagem: false,
+          legenda_imagem: "Figura 2.1 — Topologia de conversão CA-CC-CA com modulação PWM por chaves IGBT.",
+          questoes: [
+            {
+              pergunta: "Por que a razão Tensão/Frequência (V/f) deve ser mantida constante quando reduzimos a velocidade de um motor através do inversor?",
+              gabarito: "Porque a reatância indutiva do estator (XL = 2πfL) diminui com a queda da frequência. Se a tensão permanecesse nominal em baixa frequência, a corrente de magnetização subiria drasticamente, saturando o núcleo ferromagnético e queimando o enrolamento por sobretemperatura."
+            },
+            {
+              pergunta: "Em quais situações práticas é obrigatório o uso de resistor de frenagem reostática conectado ao barramento CC do inversor?",
+              gabarito: "Em cargas de alta inércia com rampas de desaceleração rápidas (centrífugas, serras industriais) ou cargas verticais regenerativas (talhas e guindastes), onde o motor atua como gerador devolvendo energia ao barramento CC e elevando a tensão acima do limite de sobretensão (Overvoltage Fault)."
+            }
+          ]
+        },
+        {
+          titulo: "Manutenção Preditiva: Análise de Vibração e Termografia",
+          conteudo: [
+            "A engenharia de manutenção industrial evoluiu da abordagem corretiva não planejada para a manutenção preditiva baseada na condição (CBM — Condition-Based Maintenance). Ao monitorar continuamente variáveis físicas da máquina em operação plena, é possível diagnosticar falhas incipientes meses antes da quebra catastrófica, maximizando o indicador de disponibilidade operacional (MTBF) e reduzindo o tempo médio de reparo (MTTR).",
+            "A análise espectral de vibrações utiliza acelerômetros piezoelétricos fixados nos mancais do conjunto motor-bomba para converter a aceleração mecânica em sinais elétricos no domínio do tempo. Através da Transformada Rápida de Fourier (FFT), o coletor de dados decompõe o sinal global em um espectro de frequências: picos em 1x a frequência de rotação (1x RPM) indicam desbalanceamento de massa; picos em 2x e 3x RPM com elevada vibração axial apontam desalinhamento angular ou paralelo de acoplamentos; enquanto frequências de alta ordem não harmônicas revelam defeitos nas pistas internas ou externas de rolamentos (BPFO/BPFI).",
+            "Complementarmente, a inspeção termográfica infravermelha permite mapear gradientes térmicos sem contato físico em painéis de comando, barramentos, conexões de disjuntores e carcaças de motores. Mau contato em bornes ou oxidação de terminais eleva a resistência ôhmica local, dissipando calor por efeito Joule (P = R × I²) facilmente identificável pelo termovisor."
+          ],
+          quadro_destaque: "CRITÉRIO DE SEVERIDADE (ISO 10816 / MTA): Em inspeções termográficas de quadros elétricos sob carga nominal, um diferencial de temperatura (ΔT) entre fases adjacentes superior a 15 °C exige programação imediata de intervenção; um ΔT acima de 40 °C caracteriza emergência crítica com risco iminente de arco elétrico.",
+          prompt_imagem: "Industrial maintenance engineer inspecting an electric motor and control panel with a thermal imaging camera and vibration sensor spectrum analyzer graph, clean didactic technical illustration",
+          imagem_url: null,
+          gerando_imagem: false,
+          legenda_imagem: "Figura 3.1 — Monitoramento preditivo combinado: espectro FFT de vibração nos mancais e termografia infravermelha.",
+          questoes: [
+            {
+              pergunta: "No espectro FFT de vibração de um motor girando a 1800 RPM (30 Hz), foi detectado um pico dominante exatamente em 30 Hz na direção radial. Qual o diagnóstico mais provável e a ação corretiva recomendada?",
+              gabarito: "Um pico predominante em 1x RPM (30 Hz) na direção radial é a assinatura clássica de desbalanceamento mecânico do rotor ou ventilador/polia acoplada. A ação corretiva consiste na limpeza de incrustações nas pás e no balanceamento dinâmico em dois planos."
+            },
+            {
+              pergunta: "Por que a inspeção termográfica de painéis elétricos deve ser realizada preferencialmente com o circuito operando com no mínimo 40% de sua carga nominal?",
+              gabarito: "Como a potência térmica dissipada em uma conexão defeituosa é proporcional ao quadrado da corrente elétrica (P = R × I²), inspeções com corrente muito baixa podem mascarar anomalias graves que só se manifestarão termicamente sob regime nominal de carga."
+            }
+          ]
+        }
+      ]
+    };
+
+    /********************************************************************
+     * 2. PRESET TEMPLATES FOR QUICK TESTING
+     ********************************************************************/
+    const PRESETS = {
+      vibracao: {
+        title: "Análise de Vibração, Diagnóstico de Falhas e Manutenção Preditiva",
+        topic: "Fundamentos de vibrações mecânicas (deslocamento, velocidade RMS e aceleração), Transformada Rápida de Fourier (FFT), diagnóstico de desbalanceamento, desalinhamento, folgas mecânicas e defeitos em rolamentos (BPFO, BPFI, BSF, FTF) segundo normas ISO 10816 / ISO 20816.",
+        level: "Técnico / Industrial",
+        chapters: "3"
+      },
+      eletrica: {
+        title: "Comandos Elétricos, Inversores de Frequência e Manutenção Preditiva",
+        topic: "Dimensionamento e acionamento de motores assíncronos trifásicos, parametrização de inversores de frequência (controle escalar V/f e vetorial), análise de vibração e termografia segundo normas ABNT NBR 5410 e NR-10.",
+        level: "Técnico / Industrial",
+        chapters: "3"
+      },
+      alinhamento: {
+        title: "Alinhamento de Eixos a Laser, Mancais de Rolamento e Confiabilidade Rotativa",
+        topic: "Tipos de desalinhamento (paralelo/offset, angular e combinado), pé manco (soft foot), dilatação térmica dinâmica, montagem e lubrificação de mancais de rolamento, tabelas de tolerância de alinhamento a laser em função da rotação (RPM).",
+        level: "Técnico / Industrial",
+        chapters: "3"
+      },
+      esp32: {
+        title: "Automação Industrial, Sensoriamento Sem Fio e IIoT com ESP32",
+        topic: "Arquitetura do microcontrolador ESP32, leitura de sensores industriais (4-20mA, PT100, acelerômetros MEMS I2C/SPI), comunicação via protocolos MQTT e Modbus TCP sobre Wi-Fi, e criação de dashboards supervisórios para Indústria 4.0.",
+        level: "Avançado / Engenharia",
+        chapters: "3"
+      },
+      solar: {
+        title: "Projeto e Instalação de Sistemas Fotovoltaicos Conectados à Rede (On-Grid)",
+        topic: "Radiação solar, efeito fotovoltaico, associação série-paralelo de módulos solares, dimensionamento de inversores string e microinversores, String Box CC/CA, proteção contra surtos (DPS) e normas ABNT NBR 16690 e NBR 5410.",
+        level: "Técnico / Industrial",
+        chapters: "3"
+      },
+      enfermagem: {
+        title: "Biossegurança Hospitalar, Controle de Infecções e Manejo em UTI",
+        topic: "Protocolos de precaução padrão e por aerossóis, paramentação e desparamentação de EPIs, esterilização de materiais críticos (autoclave), monitorização hemodinâmica invasiva em UTI e segurança do paciente segundo ANVISA e NR-32.",
+        level: "Técnico / Industrial",
+        chapters: "3"
+      }
+    };
+
+    function loadPresetTemplate(presetKey) {
+      if (!presetKey || !PRESETS[presetKey]) return;
+      const p = PRESETS[presetKey];
+      document.getElementById('input-title').value = p.title;
+      document.getElementById('input-topic').value = p.topic;
+      document.getElementById('input-level').value = p.level;
+      document.getElementById('input-chapters').value = p.chapters;
+      showToast(`Modelo "${p.title}" carregado no painel! Clique em "Gerar Apostila Completa com IA" para criar.`, 'info');
+    }
+
+    /********************************************************************
+     * 3. MULTIMODAL FILE UPLOAD HANDLER (.txt, .md, .json, .csv, .png, .jpg, .pdf)
+     ********************************************************************/
+    function setupDragAndDrop() {
+      const dropzone = document.getElementById('file-dropzone');
+      if (!dropzone) return;
+
+      ['dragenter', 'dragover'].forEach(evt => {
+        dropzone.addEventListener(evt, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.add('border-brand-600', 'bg-brand-50/60');
+        });
+      });
+
+      ['dragleave', 'drop'].forEach(evt => {
+        dropzone.addEventListener(evt, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.remove('border-brand-600', 'bg-brand-50/60');
+        });
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+        if (e.dataTransfer?.files?.length) {
+          handleFilesSelected(e.dataTransfer.files);
+        }
+      });
+    }
+
+    async function handleFilesSelected(fileList) {
+      if (!fileList || fileList.length === 0) return;
+
+      for (const file of Array.from(fileList)) {
+        const ext = file.name.split('.').pop().toLowerCase();
+        const isTextFile = ['txt', 'md', 'json', 'csv'].includes(ext);
+        const isBinarySupported = ['png', 'jpg', 'jpeg', 'webp', 'pdf'].includes(ext);
+
+        if (!isTextFile && !isBinarySupported) {
+          showToast(`Formato não suportado (${file.name}). Use .txt, .md, .json, .csv, .png, .jpg ou .pdf.`, 'warning');
+          continue;
+        }
+
+        try {
+          if (isTextFile) {
+            const textContent = await readFileAsText(file);
+            attachedFiles.push({
+              id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+              name: file.name,
+              size: formatBytes(file.size),
+              mimeType: file.type || 'text/plain',
+              isText: true,
+              content: textContent
+            });
+          } else {
+            const base64Data = await readFileAsBase64(file);
+            let mimeType = file.type;
+            if (!mimeType) {
+              if (ext === 'pdf') mimeType = 'application/pdf';
+              else if (ext === 'png') mimeType = 'image/png';
+              else mimeType = 'image/jpeg';
+            }
+            attachedFiles.push({
+              id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+              name: file.name,
+              size: formatBytes(file.size),
+              mimeType: mimeType,
+              isText: false,
+              base64Data: base64Data
+            });
+          }
+        } catch (err) {
+          console.error("Erro ao processar arquivo:", err);
+          showToast(`Não foi possível ler o arquivo ${file.name}.`, 'error');
+        }
+      }
+
+      document.getElementById('file-input').value = '';
+      renderAttachedFilesList();
+      showToast(`${fileList.length} arquivo(s) anexado(s) para o prompt multimodal do Gemini.`, 'success');
+    }
+
+    function readFileAsText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsText(file);
+      });
+    }
+
+    function readFileAsBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = String(reader.result);
+          const base64Clean = result.includes(',') ? result.split(',')[1] : result;
+          resolve(base64Clean);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function removeAttachedFile(id) {
+      attachedFiles = attachedFiles.filter(f => f.id !== id);
+      renderAttachedFilesList();
+    }
+
+    function renderAttachedFilesList() {
+      const container = document.getElementById('attached-files-list');
+      if (!attachedFiles.length) {
+        container.innerHTML = '';
+        return;
+      }
+
+      container.innerHTML = attachedFiles.map(f => {
+        const icon = f.isText
+          ? 'ph-file-text text-brand-600'
+          : (f.mimeType.includes('pdf') ? 'ph-file-pdf text-rose-600' : 'ph-image text-teal-600');
+        const badge = f.isText ? 'TEXTO' : 'INLINE-DATA';
+        return `
+          <div class="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-xs">
+            <div class="flex items-center gap-2 min-w-0">
+              <i class="ph-fill ${icon} text-base shrink-0"></i>
+              <span class="font-medium text-slate-800 truncate">${escapeHtml(f.name)}</span>
+              <span class="text-[10px] font-mono text-slate-400 shrink-0">(${f.size})</span>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-600">${badge}</span>
+              <button onclick="removeAttachedFile('${f.id}')" class="text-slate-400 hover:text-rose-600 p-0.5" title="Remover anexo">
+                <i class="ph ph-trash text-sm"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    /********************************************************************
+     * 4. YOUTUBE URL PARSER & THUMBNAIL PREVIEW
+     ********************************************************************/
+    function extractYoutubeId(url) {
+      if (!url) return null;
+      const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+      const match = url.match(regExp);
+      return match ? match[1] : null;
+    }
+
+    function handleYoutubeUrlChange(url) {
+      const clearBtn = document.getElementById('clear-yt-btn');
+      const card = document.getElementById('youtube-preview-card');
+      const thumbImg = document.getElementById('youtube-thumb-img');
+      const idSpan = document.getElementById('youtube-video-id');
+      const extLink = document.getElementById('youtube-external-link');
+
+      if (url && url.trim().length > 0) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+        card.classList.add('hidden');
+        return;
+      }
+
+      const videoId = extractYoutubeId(url.trim());
+      if (videoId) {
+        card.classList.remove('hidden');
+        thumbImg.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+        idSpan.textContent = videoId;
+        extLink.href = `https://www.youtube.com/watch?v=${videoId}`;
+      } else {
+        card.classList.add('hidden');
+      }
+    }
+
+    function clearYoutubeInput() {
+      const input = document.getElementById('input-youtube');
+      input.value = '';
+      handleYoutubeUrlChange('');
+    }
+
+    /********************************************************************
+     * 5. GEMINI API INTEGRATION (TEXT + MULTIMODAL + SEARCH GROUNDING + IMAGE GEN)
+     ********************************************************************/
+    async function fetchWithRetry(url, options, maxRetries = 4) {
+      let delay = 1000;
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const response = await fetch(url, options);
+          if (response.ok) {
+            return await response.json();
+          }
+          // If 400 Bad Request, return JSON error immediately so caller can inspect/fallback
+          if (response.status === 400) {
+            const errBody = await response.json().catch(() => ({}));
+            const err = new Error(errBody?.error?.message || `HTTP 400`);
+            err.status = 400;
+            throw err;
+          }
+          if (attempt === maxRetries - 1) {
+            const errBody = await response.json().catch(() => ({}));
+            throw new Error(errBody?.error?.message || `Erro HTTP ${response.status}`);
+          }
+        } catch (err) {
+          if (err.status === 400 || attempt === maxRetries - 1) throw err;
+        }
+        await new Promise(r => setTimeout(r, delay));
+        delay *= 2;
+      }
+    }
+
+    async function generateWorkbookWithAI() {
+      const titleInput = document.getElementById('input-title').value.trim();
+      const topicInput = document.getElementById('input-topic').value.trim();
+      const levelInput = document.getElementById('input-level').value;
+      const chaptersCount = parseInt(document.getElementById('input-chapters').value, 10) || 3;
+      const notesInput = document.getElementById('input-notes').value.trim();
+      const youtubeUrl = document.getElementById('input-youtube').value.trim();
+      const useSearch = document.getElementById('toggle-search').checked;
+      const useImages = document.getElementById('toggle-images').checked;
+
+      if (!titleInput || !topicInput) {
+        showToast("Por favor, preencha o 'Título da Apostila' e o 'Tema / Assunto Detalhado'.", "warning");
+        return;
+      }
+
+      const btn = document.getElementById('btn-generate-workbook');
+      const statusBox = document.getElementById('generation-status-box');
+      const statusText = document.getElementById('generation-status-text');
+      const stepBadge = document.getElementById('generation-step-badge');
+      const progressBar = document.getElementById('generation-progress-bar');
+
+      btn.disabled = true;
+      btn.classList.add('opacity-60', 'cursor-not-allowed');
+      statusBox.classList.remove('hidden');
+      statusText.innerHTML = `<i class="ph ph-spinner animate-spin text-base"></i> Redigindo capítulos e questões com Gemini...`;
+      stepBadge.textContent = useImages ? "Etapa 1/2" : "Etapa 1/1";
+      progressBar.style.width = "35%";
+
+      try {
+        const systemInstruction = `Você é um Engenheiro Pedagógico Sênior e Autor de Apostilas Técnicas e Didáticas (padrão SENAI, Institutos Federais e Universidades Técnicas).
+Sua missão é criar uma apostila técnica completa, densa, rigorosa e extremamente didática em português do Brasil.
+
+Regras obrigatórias de conteúdo:
+1. Gere exatamente ${chaptersCount} capítulos numerados e progressivos.
+2. Em cada capítulo, o campo 'conteudo' deve ser um array contendo de 3 a 4 parágrafos longos, profundos e detalhados (mínimo de 70 palavras por parágrafo), explicando conceitos teóricos, equações, funcionamento prático e aplicações reais.
+3. Inclua em cada capítulo um 'quadro_destaque' contendo uma Dica Prática de Campo, Norma Técnica aplicável (ex: ABNT NBR, NR, ISO, ANVISA, IEEE) ou Alerta de Segurança Operacional.
+4. Inclua em cada capítulo um 'prompt_imagem' descritivo EM INGLÊS para gerar uma ilustração técnica ou diagrama didático claro (ex: "Clean technical educational diagram of..., blueprint vector textbook illustration, white background").
+5. Inclua em cada capítulo uma lista 'questoes' com 2 questões técnicas reflexivas ou de cálculo acompanhadas de 'gabarito' detalhado e comentado.`;
+
+        let userPromptText = `Crie uma Apostila de Ensino Técnica e Didática completa com as seguintes especificações:
+- TÍTULO DA APOSTILA: "${titleInput}"
+- TEMA E ESCOPO DETALHADO: "${topicInput}"
+- NÍVEL DE PROFUNDIDADE: ${levelInput}
+- QUANTIDADE EXATA DE CAPÍTULOS: ${chaptersCount}
+`;
+
+        if (youtubeUrl) {
+          const ytId = extractYoutubeId(youtubeUrl);
+          userPromptText += `\n- VÍDEO DO YOUTUBE DE INSPIRAÇÃO: URL: ${youtubeUrl} ${ytId ? `(Video ID: ${ytId})` : ''}. Caso a pesquisa web esteja ativa, busque informações sobre este vídeo/tema para enriquecer a apostila.`;
+        }
+
+        if (notesInput) {
+          userPromptText += `\n- NOTAS COMPLEMENTARES / TRANSCRIÇÃO / EMENTA FORNECIDA PELO USUÁRIO:\n"""\n${notesInput}\n"""\n`;
+        }
+
+        // Append text files content
+        const textFiles = attachedFiles.filter(f => f.isText);
+        if (textFiles.length > 0) {
+          userPromptText += `\n- ARQUIVOS DE TEXTO DE INSPIRAÇÃO ANEXADOS:\n`;
+          textFiles.forEach(tf => {
+            userPromptText += `\n--- Início do Arquivo: ${tf.name} ---\n${tf.content.slice(0, 25000)}\n--- Fim do Arquivo: ${tf.name} ---\n`;
+          });
+        }
+
+        userPromptText += `\nRetorne ESTRITAMENTE um objeto JSON válido seguindo a estrutura:
+{
+  "titulo": "string",
+  "subtitulo": "string",
+  "resumo_executivo": "string (1 a 2 parágrafos de introdução geral da apostila)",
+  "capitulos": [
+    {
+      "titulo": "string (sem o número na frente)",
+      "conteudo": ["parágrafo 1 detalhado", "parágrafo 2 detalhado", "parágrafo 3 detalhado"],
+      "quadro_destaque": "string (Norma técnica, dica prática ou procedimento de segurança)",
+      "prompt_imagem": "string (prompt descritivo em inglês para ilustração didática/técnica)",
+      "legenda_imagem": "string (legenda explicativa da figura em português)",
+      "questoes": [
+        {
+          "pergunta": "string",
+          "gabarito": "string (resposta comentada passo a passo)"
+        }
+      ]
+    }
+  ]
+}`;
+
+        // Build Multimodal Parts (Text + InlineData for images/PDFs)
+        const userParts = [{ text: userPromptText }];
+        const binaryFiles = attachedFiles.filter(f => !f.isText && f.base64Data);
+        binaryFiles.forEach(bf => {
+          userParts.push({
+            inlineData: {
+              mimeType: bf.mimeType,
+              data: bf.base64Data
+            }
+          });
+        });
+
+        const workbookSchema = {
+          type: "OBJECT",
+          properties: {
+            titulo: { type: "STRING" },
+            subtitulo: { type: "STRING" },
+            resumo_executivo: { type: "STRING" },
+            capitulos: {
+              type: "ARRAY",
+              items: {
+                type: "OBJECT",
+                properties: {
+                  titulo: { type: "STRING" },
+                  conteudo: {
+                    type: "ARRAY",
+                    items: { type: "STRING" }
+                  },
+                  quadro_destaque: { type: "STRING" },
+                  prompt_imagem: { type: "STRING" },
+                  legenda_imagem: { type: "STRING" },
+                  questoes: {
+                    type: "ARRAY",
+                    items: {
+                      type: "OBJECT",
+                      properties: {
+                        pergunta: { type: "STRING" },
+                        gabarito: { type: "STRING" }
+                      },
+                      propertyOrdering: ["pergunta", "gabarito"]
+                    }
+                  }
+                },
+                propertyOrdering: ["titulo", "conteudo", "quadro_destaque", "prompt_imagem", "legenda_imagem", "questoes"]
+              }
+            }
+          },
+          propertyOrdering: ["titulo", "subtitulo", "resumo_executivo", "capitulos"]
+        };
+
+        const activeKey = getEffectiveApiKey();
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${activeKey}`;
+
+        let result;
+        if (useSearch) {
+          // Try with Google Search tool + JSON schema first; if endpoint restricts combining tools + responseSchema, fallback gracefully to tools + JSON parsing
+          try {
+            const payloadWithSearchAndSchema = {
+              contents: [{ role: "user", parts: userParts }],
+              tools: [{ "google_search": {} }],
+              systemInstruction: { parts: [{ text: systemInstruction }] },
+              generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: workbookSchema
+              }
+            };
+            result = await fetchWithRetry(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payloadWithSearchAndSchema)
+            });
+          } catch (schemaWithSearchErr) {
+            const payloadSearchOnly = {
+              contents: [{ role: "user", parts: userParts }],
+              tools: [{ "google_search": {} }],
+              systemInstruction: { parts: [{ text: systemInstruction + "\nResponda APENAS com o JSON puro, sem blocos markdown." }] }
+            };
+            result = await fetchWithRetry(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payloadSearchOnly)
+            });
+          }
+        } else {
+          const payloadStructured = {
+            contents: [{ role: "user", parts: userParts }],
+            systemInstruction: { parts: [{ text: systemInstruction }] },
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema: workbookSchema
+            }
+          };
+          result = await fetchWithRetry(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payloadStructured)
+          });
+        }
+
+        const candidate = result?.candidates?.[0];
+        const rawText = candidate?.content?.parts?.map(p => p.text || '').join('') || '';
+        if (!rawText) {
+          throw new Error("A API do Gemini não retornou texto na resposta.");
+        }
+
+        const parsedData = parseJsonResilient(rawText);
+
+        // Extract Google Search Grounding Sources if present
+        let sources = [];
+        const groundingMetadata = candidate?.groundingMetadata;
+        if (groundingMetadata?.groundingAttributions) {
+          sources = groundingMetadata.groundingAttributions
+            .map(attr => ({
+              uri: attr.web?.uri,
+              title: attr.web?.title
+            }))
+            .filter(s => s.uri && s.title);
+        } else if (groundingMetadata?.groundingChunks) {
+          sources = groundingMetadata.groundingChunks
+            .map(chunk => ({
+              uri: chunk.web?.uri,
+              title: chunk.web?.title
+            }))
+            .filter(s => s.uri && s.title);
+        }
+
+        // Normalize into currentWorkbook state
+        currentWorkbook = {
+          titulo: parsedData.titulo || titleInput,
+          subtitulo: parsedData.subtitulo || `Apostila Didática e Técnica — Nível ${levelInput}`,
+          nivel: levelInput,
+          dataGeracao: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }),
+          resumo_executivo: parsedData.resumo_executivo || "",
+          fontes_web: sources,
+          capitulos: (parsedData.capitulos || []).map((cap, idx) => ({
+            titulo: cap.titulo || `Capítulo ${idx + 1}`,
+            conteudo: Array.isArray(cap.conteudo) ? cap.conteudo : [String(cap.conteudo || '')],
+            quadro_destaque: cap.quadro_destaque || "Observe as normas técnicas aplicáveis antes de executar procedimentos práticos.",
+            prompt_imagem: cap.prompt_imagem || `Technical educational textbook diagram illustrating ${cap.titulo || titleInput}, clean vector blueprint style, white background`,
+            imagem_url: null,
+            motor_imagem: null,
+            gerando_imagem: false,
+            legenda_imagem: cap.legenda_imagem || `Figura ${idx + 1}.1 — Ilustração técnica representativa: ${cap.titulo || ''}.`,
+            questoes: Array.isArray(cap.questoes) ? cap.questoes : []
+          }))
+        };
+
+        progressBar.style.width = useImages ? "65%" : "100%";
+        renderWorkbookA4();
+
+        // Scroll preview to top
+        document.getElementById('preview-scroll-area').scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Close mobile sidebar if on mobile screen
+        if (window.innerWidth < 1024) {
+          toggleMobileSidebar(false);
+        }
+
+        if (useImages) {
+          statusText.innerHTML = `<i class="ph ph-spinner animate-spin text-base"></i> Gerando ilustrações dos capítulos com IA...`;
+          stepBadge.textContent = "Etapa 2/2";
+          progressBar.style.width = "85%";
+          await generateAllChapterImagesParallel();
+          progressBar.style.width = "100%";
+          showToast("Apostila completa e ilustrações geradas com sucesso!", "success");
+        } else {
+          showToast("Apostila técnica gerada com sucesso! Você pode editar qualquer texto diretamente na página.", "success");
+        }
+
+      } catch (error) {
+        console.error("Erro na geração da apostila:", error);
+        const hasKey = Boolean(getEffectiveApiKey());
+        if (!hasKey) {
+          openApiKeyPanel();
+          showToast("Configure sua Chave da Gemini API no painel lateral para gerar apostilas fora do ambiente de preview.", "warning");
+        } else {
+          showToast(`Erro ao gerar apostila: ${error.message}`, "error");
+        }
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('opacity-60', 'cursor-not-allowed');
+        setTimeout(() => {
+          statusBox.classList.add('hidden');
+          progressBar.style.width = "0%";
+        }, 800);
+      }
+    }
+
+    function parseJsonResilient(text) {
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        // Strip markdown code fences if present
+        const cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+        try {
+          return JSON.parse(cleaned);
+        } catch (e2) {
+          const firstBrace = cleaned.indexOf('{');
+          const lastBrace = cleaned.lastIndexOf('}');
+          if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+            return JSON.parse(cleaned.substring(firstBrace, lastBrace + 1));
+          }
+          throw new Error("Não foi possível interpretar o JSON retornado pelo modelo.");
+        }
+      }
+    }
+
+    /********************************************************************
+     * 6. HYBRID CHAPTER IMAGE GENERATION (IMAGEN 3 + POLLINATIONS BASE64 FALLBACK + SVG DIAGRAM)
+     ********************************************************************/
+    async function generateChapterImage(chapterIdx) {
+      const cap = currentWorkbook.capitulos[chapterIdx];
+      if (!cap) return;
+
+      // Sync prompt if the user edited it inside the prompt input box
+      const promptInputEl = document.getElementById(`chapter-prompt-input-${chapterIdx}`);
+      if (promptInputEl && promptInputEl.value.trim()) {
+        cap.prompt_imagem = promptInputEl.value.trim();
+      }
+
+      const engineMode = document.getElementById('input-image-engine')?.value || 'auto';
+
+      cap.gerando_imagem = true;
+      updateChapterFigureDOM(chapterIdx);
+
+      const enhancedPrompt = `${cap.prompt_imagem}. Clean educational textbook technical diagram or illustration, high contrast, professional didactic visual, white background, no watermarks`;
+
+      try {
+        const res = await requestHybridAIImageGeneration(enhancedPrompt, engineMode, cap, chapterIdx);
+        cap.imagem_url = res.dataUrl;
+        cap.motor_imagem = res.engineLabel;
+        cap.gerando_imagem = false;
+        updateChapterFigureDOM(chapterIdx);
+      } catch (err) {
+        console.error(`Erro ao gerar imagem do capítulo ${chapterIdx + 1}:`, err);
+        // Ultimate fallback: high-resolution technical SVG blueprint Data URL so the user never gets a broken image
+        cap.imagem_url = generateTechnicalBlueprintSvgDataUrl(cap, chapterIdx);
+        cap.motor_imagem = "Diagrama Técnico SVG";
+        cap.gerando_imagem = false;
+        updateChapterFigureDOM(chapterIdx);
+        showToast(`Capítulo ${chapterIdx + 1}: Gerado diagrama esquemático vetorial SVG (compatível com PDF).`, "info");
+      }
+    }
+
+    async function requestHybridAIImageGeneration(promptText, engineMode, cap, chapterIdx) {
+      const activeKey = getEffectiveApiKey();
+
+      // 1. Try Google Imagen 3 / Gemini Image API if mode is 'auto' or 'imagen'
+      if (engineMode === 'auto' || engineMode === 'imagen') {
+        try {
+          const googleImg = await tryGoogleImageEndpoints(promptText, activeKey);
+          if (googleImg) {
+            return { dataUrl: googleImg, engineLabel: "Google Imagen 3 / Gemini IA" };
+          }
+        } catch (googleErr) {
+          console.warn("Google Imagen/Gemini Image indisponível ou chave sem Billing. Acionando fallback se permitido:", googleErr.message);
+          if (engineMode === 'imagen') {
+            throw googleErr;
+          }
+        }
+      }
+
+      // 2. Free AI Engine (Pollinations Flux/Turbo converted to Base64 Data URL for CORS-free html2pdf export)
+      try {
+        const freeBase64Url = await fetchFreePollinationsImageAsBase64(promptText, chapterIdx);
+        return { dataUrl: freeBase64Url, engineLabel: "IA Gratuita (Flux Base64)" };
+      } catch (freeErr) {
+        console.warn("Fallback gratuito Pollinations falhou ou bloqueado por rede, gerando Diagrama Técnico SVG:", freeErr);
+        return {
+          dataUrl: generateTechnicalBlueprintSvgDataUrl(cap, chapterIdx),
+          engineLabel: "Diagrama Técnico SVG"
+        };
+      }
+    }
+
+    async function tryGoogleImageEndpoints(promptText, activeKey) {
+      // Attempt 1: Official Imagen 3 predict endpoint (imagen-3.0-generate-002)
+      const imagenUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${activeKey}`;
+      try {
+        const imagenRes = await fetchWithRetry(imagenUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            instances: [{ prompt: promptText }],
+            parameters: { sampleCount: 1, aspectRatio: "16:9" }
+          })
+        }, 2);
+        const b64Imagen = imagenRes?.predictions?.[0]?.bytesBase64Encoded;
+        if (b64Imagen) {
+          const mime = imagenRes?.predictions?.[0]?.mimeType || 'image/png';
+          return `data:${mime};base64,${b64Imagen}`;
+        }
+      } catch (e) {
+        // Proceed to Gemini Flash Image endpoint
+      }
+
+      // Attempt 2: gemini-3.1-flash-image generateContent endpoint
+      const flashImageUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${activeKey}`;
+      try {
+        const res = await fetchWithRetry(flashImageUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: promptText }] }],
+            generationConfig: {
+              responseModalities: ['IMAGE'],
+              imageConfig: { aspectRatio: "16:9" }
+            }
+          })
+        }, 2);
+        const part = res?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+        if (part?.inlineData?.data) {
+          return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+        }
+      } catch (e) {
+        // Proceed to lite image endpoint
+      }
+
+      // Attempt 3: gemini-3.1-flash-lite-image
+      const liteImageUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image:generateContent?key=${activeKey}`;
+      const resLite = await fetchWithRetry(liteImageUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: promptText }] }],
+          generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+        })
+      }, 2);
+      const partLite = resLite?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+      if (partLite?.inlineData?.data) {
+        return `data:${partLite.inlineData.mimeType || 'image/png'};base64,${partLite.inlineData.data}`;
+      }
+
+      throw new Error("Endpoints de imagem Google exigem Billing ou não retornaram imagem.");
+    }
+
+    async function fetchFreePollinationsImageAsBase64(promptText, chapterIdx = 0) {
+      const seed = Math.floor(1000 + Math.random() * 900000) + chapterIdx * 17;
+      const cleanPrompt = promptText.slice(0, 380);
+      const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=1024&height=576&nologo=true&seed=${seed}&model=flux`;
+
+      // Method A: Fetch as Blob and convert via FileReader to Base64 Data URL
+      try {
+        const response = await fetch(url, { mode: 'cors', cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const blob = await response.blob();
+        return await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } catch (fetchErr) {
+        // Method B: Offscreen Image with crossOrigin="anonymous" drawn to Canvas -> toDataURL
+        return await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          const timeoutId = setTimeout(() => {
+            reject(new Error("Tempo limite excedido ao carregar imagem gratuita."));
+          }, 18000);
+
+          img.onload = () => {
+            clearTimeout(timeoutId);
+            try {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.naturalWidth || 1024;
+              canvas.height = img.naturalHeight || 576;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+              resolve(dataUrl);
+            } catch (canvasErr) {
+              reject(canvasErr);
+            }
+          };
+          img.onerror = (err) => {
+            clearTimeout(timeoutId);
+            reject(err);
+          };
+          img.src = url;
+        });
+      }
+    }
+
+    function generateTechnicalBlueprintSvgDataUrl(cap, chapterIdx) {
+      const chNum = chapterIdx + 1;
+      const safeTitle = (cap?.titulo || `Módulo Técnico ${chNum}`).slice(0, 62).replace(/[<>&"']/g, '');
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="960" height="480">
+        <defs>
+          <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+            <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+          </pattern>
+        </defs>
+        <rect width="960" height="480" fill="#F8FAFC"/>
+        <rect width="960" height="480" fill="url(#grid)"/>
+        <rect x="24" y="24" width="912" height="432" rx="8" fill="none" stroke="#1E40AF" stroke-width="2.5"/>
+        <rect x="24" y="24" width="912" height="48" fill="#1E3A8A"/>
+        <text x="44" y="54" font-family="monospace" font-size="15" font-weight="bold" fill="#FFFFFF">ESQUEMA TÉCNICO DIDÁTICO • CAPÍTULO 0${chNum}</text>
+        <text x="916" y="54" text-anchor="end" font-family="monospace" font-size="13" fill="#93C5FD">NORMA TÉCNICA / ENGENHARIA</text>
+        <!-- Blocks -->
+        <rect x="75" y="150" width="210" height="140" rx="10" fill="#FFFFFF" stroke="#1D4ED8" stroke-width="2.5"/>
+        <text x="180" y="205" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#0F172A">ENTRADA / FONTE</text>
+        <text x="180" y="230" text-anchor="middle" font-family="monospace" font-size="12" fill="#475569">Parâmetros Nominais</text>
+        <circle cx="180" cy="260" r="10" fill="#DBEAFE" stroke="#1D4ED8" stroke-width="2"/>
+        <!-- Arrow 1 -->
+        <line x1="285" y1="220" x2="365" y2="220" stroke="#1D4ED8" stroke-width="3"/>
+        <polygon points="370,220 358,213 358,227" fill="#1D4ED8"/>
+        <!-- Center Processor Block -->
+        <rect x="375" y="130" width="220" height="180" rx="12" fill="#EFF6FF" stroke="#1E40AF" stroke-width="3"/>
+        <text x="485" y="185" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1E3A8A">SISTEMA DE CONTROLE</text>
+        <text x="485" y="210" text-anchor="middle" font-family="monospace" font-size="12" fill="#1D4ED8">Processamento &amp; Proteção</text>
+        <path d="M 415 260 Q 432 225, 450 260 T 485 260 T 520 260 T 555 260" fill="none" stroke="#0D9488" stroke-width="3"/>
+        <!-- Arrow 2 -->
+        <line x1="595" y1="220" x2="675" y2="220" stroke="#1D4ED8" stroke-width="3"/>
+        <polygon points="680,220 668,213 668,227" fill="#1D4ED8"/>
+        <!-- Output Actuator Block -->
+        <rect x="685" y="150" width="200" height="140" rx="10" fill="#FFFFFF" stroke="#0D9488" stroke-width="2.5"/>
+        <text x="785" y="205" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#0F172A">CARGA / ATUADOR</text>
+        <text x="785" y="230" text-anchor="middle" font-family="monospace" font-size="12" fill="#0F766E">Monitoramento Preditivo</text>
+        <circle cx="785" cy="260" r="12" fill="#CCFBF1" stroke="#0D9488" stroke-width="2"/>
+        <!-- Feedback Loop -->
+        <path d="M 785 290 L 785 355 L 180 355 L 180 290" fill="none" stroke="#64748B" stroke-width="2" stroke-dasharray="6 4"/>
+        <text x="485" y="345" text-anchor="middle" font-family="monospace" font-size="12" font-weight="bold" fill="#475569">MALHA DE REALIMENTAÇÃO E DIAGNÓSTICO (SENSORES)</text>
+        <!-- Title Bar Bottom -->
+        <rect x="44" y="395" width="872" height="42" rx="6" fill="#F1F5F9" stroke="#CBD5E1"/>
+        <text x="480" y="421" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1E293B">${safeTitle}</text>
+      </svg>`;
+      return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+    }
+
+    async function generateAllChapterImagesParallel() {
+      const promises = currentWorkbook.capitulos.map((_, idx) => generateChapterImage(idx));
+      await Promise.allSettled(promises);
+    }
+
+    async function generateAllMissingImages() {
+      const missingIndices = currentWorkbook.capitulos
+        .map((c, idx) => (!c.imagem_url ? idx : null))
+        .filter(idx => idx !== null);
+
+      if (missingIndices.length === 0) {
+        // Regenerate all if all already exist
+        await generateAllChapterImagesParallel();
+        return;
+      }
+
+      showToast(`Gerando ${missingIndices.length} ilustração(ões) com IA...`, "info");
+      await Promise.allSettled(missingIndices.map(idx => generateChapterImage(idx)));
+      showToast("Ilustrações concluídas!", "success");
+    }
+
+    function triggerChapterCustomImageUpload(chapterIdx) {
+      activeChapterImageUploadIndex = chapterIdx;
+      const fileInput = document.getElementById('chapter-custom-image-input');
+      fileInput.value = '';
+      fileInput.click();
+    }
+
+    function handleChapterCustomImageFile(inputEl) {
+      const file = inputEl.files?.[0];
+      if (!file || activeChapterImageUploadIndex === null) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const idx = activeChapterImageUploadIndex;
+        if (currentWorkbook.capitulos[idx]) {
+          currentWorkbook.capitulos[idx].imagem_url = reader.result;
+          currentWorkbook.capitulos[idx].motor_imagem = "Upload Local (PC)";
+          currentWorkbook.capitulos[idx].gerando_imagem = false;
+          updateChapterFigureDOM(idx);
+          showToast(`Imagem própria inserida no Capítulo ${idx + 1}!`, "success");
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function togglePromptEditor(chapterIdx) {
+      const box = document.getElementById(`prompt-editor-box-${chapterIdx}`);
+      if (box) {
+        box.classList.toggle('hidden');
+      }
+    }
+
+    /********************************************************************
+     * 7. RENDER THE A4 EDITORIAL WORKBOOK & INLINE EDITING BINDINGS
+     ********************************************************************/
+    function renderWorkbookA4() {
+      const root = document.getElementById('workbook-a4-root');
+      const wb = currentWorkbook;
+
+      // Build Table of Contents items
+      const sumarioHtml = wb.capitulos.map((cap, idx) => `
+        <div class="flex items-baseline justify-between py-2 border-b border-dotted border-slate-300 text-sm">
+          <div class="flex items-baseline gap-2.5 pr-3">
+            <span class="font-mono font-bold text-brand-700 text-xs">CAPÍTULO 0${idx + 1}</span>
+            <span class="font-semibold text-slate-800" contenteditable="true" onblur="syncChapterTitle(${idx}, this.innerText)">${escapeHtml(cap.titulo)}</span>
+          </div>
+          <span class="font-mono text-xs text-slate-500 shrink-0">Seção ${idx + 1}.0</span>
+        </div>
+      `).join('');
+
+      // Grounding Sources HTML if available
+      const sourcesHtml = (wb.fontes_web && wb.fontes_web.length > 0) ? `
+        <div class="mt-8 pt-5 border-t border-slate-200 avoid-break">
+          <div class="flex items-center gap-2 mb-2.5">
+            <i class="ph-fill ph-globe-hemisphere-west text-brand-700"></i>
+            <h4 class="text-xs font-mono uppercase tracking-wider font-bold text-slate-700">Referências e Fontes Fundamentadas (Google Search Grounding)</h4>
+          </div>
+          <ul class="space-y-1 text-xs text-slate-600 list-disc list-inside">
+            ${wb.fontes_web.map(s => `
+              <li>
+                <a href="${escapeAttr(s.uri)}" target="_blank" rel="noopener noreferrer" class="text-brand-700 hover:underline font-medium">${escapeHtml(s.title)}</a>
+                <span class="text-slate-400 font-mono text-[10px] ml-1">(${escapeHtml(s.uri)})</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      ` : '';
+
+      // PAGE 1: TECHNICAL COVER, EXECUTIVE SUMMARY & AUTOMATIC TABLE OF CONTENTS
+      let html = `
+        <article class="a4-sheet flex flex-col justify-between">
+          <div>
+            <!-- Top Technical Header Strip -->
+            <div class="flex items-center justify-between pb-4 border-b-2 border-slate-900">
+              <div class="flex items-center gap-2.5">
+                <div class="w-3 h-8 bg-brand-700 rounded-sm"></div>
+                <div>
+                  <span class="font-mono text-[10px] uppercase tracking-widest text-brand-700 font-bold block">CADERNO DE ENSINO TÉCNICO E DIDÁTICO</span>
+                  <span class="font-mono text-xs text-slate-600 font-medium" contenteditable="true">NÍVEL: ${escapeHtml(wb.nivel.toUpperCase())}</span>
+                </div>
+              </div>
+              <div class="text-right font-mono text-[11px] text-slate-500">
+                <div contenteditable="true">EDIÇÃO TÉCNICA • ${escapeHtml(wb.dataGeracao)}</div>
+                <div>DOCUMENTO EDITÁVEL A4</div>
+              </div>
+            </div>
+
+            <!-- Main Cover Title Block -->
+            <div class="py-10 border-b border-slate-200">
+              <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-brand-50 border border-brand-200 text-brand-800 font-mono text-[11px] font-semibold uppercase tracking-wider mb-4">
+                <i class="ph-fill ph-bookmarks"></i> Material Didático Estruturado
+              </div>
+              <h1
+                class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-[1.15] mb-4"
+                contenteditable="true"
+                onblur="currentWorkbook.titulo = this.innerText"
+              >${escapeHtml(wb.titulo)}</h1>
+              <p
+                class="text-base sm:text-lg text-slate-600 font-normal leading-relaxed"
+                contenteditable="true"
+                onblur="currentWorkbook.subtitulo = this.innerText"
+              >${escapeHtml(wb.subtitulo)}</p>
+            </div>
+
+            <!-- Executive Summary / Apresentação -->
+            <div class="py-7 border-b border-slate-200 avoid-break">
+              <h2 class="font-mono text-xs font-bold uppercase tracking-widest text-brand-700 mb-3 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-brand-700"></span>
+                Apresentação e Resumo Executivo
+              </h2>
+              <div class="editorial-prose bg-slate-50/80 p-5 rounded-xl border border-slate-200/90">
+                <p
+                  class="!mb-0"
+                  contenteditable="true"
+                  onblur="currentWorkbook.resumo_executivo = this.innerText"
+                >${escapeHtml(wb.resumo_executivo)}</p>
+              </div>
+            </div>
+
+            <!-- Automatic Table of Contents (Sumário) -->
+            <div class="py-7 avoid-break">
+              <h2 class="font-mono text-xs font-bold uppercase tracking-widest text-slate-900 mb-4 flex items-center gap-2">
+                <i class="ph-bold ph-list-numbers text-brand-700 text-base"></i>
+                Sumário Estruturado da Apostila
+              </h2>
+              <div class="space-y-1">
+                ${sumarioHtml}
+                <div class="flex items-baseline justify-between py-2 border-b border-dotted border-slate-300 text-sm">
+                  <div class="flex items-baseline gap-2.5 pr-3">
+                    <span class="font-mono font-bold text-teal-700 text-xs">AVALIAÇÃO</span>
+                    <span class="font-semibold text-slate-800">Caderno de Exercícios de Fixação e Gabarito Comentado</span>
+                  </div>
+                  <span class="font-mono text-xs text-slate-500 shrink-0">Seção Final</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sheet Footer -->
+          <div class="pt-6 border-t border-slate-200 flex items-center justify-between text-[11px] font-mono text-slate-400">
+            <span contenteditable="true">${escapeHtml(wb.titulo)}</span>
+            <span>Capa & Sumário • Pág. 1</span>
+          </div>
+        </article>
+      `;
+
+      // CHAPTER SHEETS
+      wb.capitulos.forEach((cap, idx) => {
+        const paragraphsHtml = (cap.conteudo || []).map((pText, pIdx) => `
+          <p contenteditable="true" onblur="syncChapterParagraph(${idx}, ${pIdx}, this.innerText)">${escapeHtml(pText)}</p>
+        `).join('');
+
+        html += `
+          <article class="a4-sheet flex flex-col justify-between" id="sheet-chapter-${idx}">
+            <div>
+              <!-- Running Header -->
+              <div class="flex items-center justify-between pb-3 mb-6 border-b border-slate-200 text-xs font-mono text-slate-400">
+                <span class="truncate max-w-[70%]">${escapeHtml(wb.titulo)}</span>
+                <span class="text-brand-700 font-semibold">CAPÍTULO 0${idx + 1}</span>
+              </div>
+
+              <!-- Chapter Title Banner -->
+              <div class="mb-6 pb-4 border-b-2 border-slate-900 avoid-break">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="font-mono text-xs font-bold uppercase tracking-widest text-brand-700">
+                    MÓDULO TÉCNICO 0${idx + 1}
+                  </span>
+                  <button
+                    onclick="removeChapter(${idx})"
+                    class="no-print text-[11px] text-slate-400 hover:text-rose-600 inline-flex items-center gap-1 transition"
+                    title="Remover este capítulo"
+                  >
+                    <i class="ph ph-trash"></i> Remover capítulo
+                  </button>
+                </div>
+                <h2
+                  class="text-2xl sm:text-[26px] font-extrabold text-slate-900 tracking-tight leading-snug"
+                  contenteditable="true"
+                  onblur="syncChapterTitle(${idx}, this.innerText)"
+                >${idx + 1}. ${escapeHtml(cap.titulo)}</h2>
+              </div>
+
+              <!-- Theoretical Multi-Paragraph Content -->
+              <div class="editorial-prose mb-6">
+                ${paragraphsHtml}
+              </div>
+
+              <!-- Technical Highlight Box (Quadro de Destaque / Norma Técnica) -->
+              <div class="my-6 rounded-xl bg-brand-50/90 border-l-4 border-brand-700 p-4 sm:p-5 avoid-break shadow-sm">
+                <div class="flex items-center gap-2 text-brand-800 font-mono text-xs font-bold uppercase tracking-wider mb-1.5">
+                  <i class="ph-fill ph-shield-check text-base"></i>
+                  <span contenteditable="true">Destaque Técnico / Norma & Prática Operacional</span>
+                </div>
+                <p
+                  class="text-xs sm:text-sm text-slate-800 font-medium leading-relaxed"
+                  contenteditable="true"
+                  onblur="currentWorkbook.capitulos[${idx}].quadro_destaque = this.innerText"
+                >${escapeHtml(cap.quadro_destaque)}</p>
+              </div>
+
+              <!-- Chapter Figure / AI Illustration Container -->
+              <div id="chapter-figure-container-${idx}" class="my-6 avoid-break">
+                ${buildChapterFigureInnerHtml(idx)}
+              </div>
+            </div>
+
+            <!-- Sheet Footer -->
+            <div class="pt-5 border-t border-slate-200 flex items-center justify-between text-[11px] font-mono text-slate-400">
+              <span>Capítulo 0${idx + 1} — ${escapeHtml(cap.titulo)}</span>
+              <span>Pág. ${idx + 2}</span>
+            </div>
+          </article>
+        `;
+      });
+
+      // FINAL SHEET: EXERCÍCIOS DE FIXAÇÃO E GABARITO COMENTADO + FONTES WEB
+      const allQuestionsHtml = wb.capitulos.map((cap, cIdx) => {
+        if (!cap.questoes || cap.questoes.length === 0) return '';
+        return `
+          <div class="mb-6 avoid-break">
+            <h3 class="text-xs font-mono font-bold uppercase tracking-wider text-brand-700 bg-slate-100 px-3 py-1.5 rounded-md mb-3 border border-slate-200">
+              Referente ao Capítulo 0${cIdx + 1}: ${escapeHtml(cap.titulo)}
+            </h3>
+            <div class="space-y-4 pl-1">
+              ${cap.questoes.map((q, qIdx) => `
+                <div class="p-4 rounded-xl border border-slate-200 bg-white avoid-break">
+                  <div class="flex items-start gap-2.5 mb-2">
+                    <span class="px-2 py-0.5 rounded bg-slate-900 text-white font-mono text-[11px] font-bold shrink-0 mt-0.5">
+                      Q${cIdx + 1}.${qIdx + 1}
+                    </span>
+                    <p
+                      class="text-sm font-semibold text-slate-900 leading-snug flex-1"
+                      contenteditable="true"
+                      onblur="currentWorkbook.capitulos[${cIdx}].questoes[${qIdx}].pergunta = this.innerText"
+                    >${escapeHtml(q.pergunta)}</p>
+                  </div>
+                  <div class="mt-2.5 pt-2.5 border-t border-dashed border-slate-200 bg-emerald-50/60 px-3 py-2 rounded-lg">
+                    <span class="font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-800 block mb-0.5">
+                      ✓ Gabarito Comentado & Resolução Técnica:
+                    </span>
+                    <p
+                      class="text-xs text-slate-700 leading-relaxed"
+                      contenteditable="true"
+                      onblur="currentWorkbook.capitulos[${cIdx}].questoes[${qIdx}].gabarito = this.innerText"
+                    >${escapeHtml(q.gabarito)}</p>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      html += `
+        <article class="a4-sheet flex flex-col justify-between">
+          <div>
+            <!-- Running Header -->
+            <div class="flex items-center justify-between pb-3 mb-6 border-b border-slate-200 text-xs font-mono text-slate-400">
+              <span class="truncate max-w-[70%]">${escapeHtml(wb.titulo)}</span>
+              <span class="text-teal-700 font-semibold">AVALIAÇÃO & GABARITO</span>
+            </div>
+
+            <!-- Section Heading -->
+            <div class="mb-6 pb-4 border-b-2 border-slate-900 avoid-break">
+              <span class="font-mono text-xs font-bold uppercase tracking-widest text-teal-700 block mb-1">
+                VERIFICAÇÃO DE APRENDIZAGEM E PRÁTICA PROFISSIONAL
+              </span>
+              <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight" contenteditable="true">
+                Caderno de Exercícios e Gabarito Comentado
+              </h2>
+            </div>
+
+            <!-- Questions & Answers List -->
+            <div>
+              ${allQuestionsHtml}
+            </div>
+
+            <!-- Web Grounding Citations -->
+            ${sourcesHtml}
+          </div>
+
+          <!-- Sheet Footer -->
+          <div class="pt-5 border-t border-slate-200 flex items-center justify-between text-[11px] font-mono text-slate-400">
+            <span>Caderno de Exercícios e Gabarito Oficial</span>
+            <span>Pág. ${wb.capitulos.length + 2}</span>
+          </div>
+        </article>
+      `;
+
+      root.innerHTML = html;
+    }
+
+    function buildChapterFigureInnerHtml(chapterIdx) {
+      const cap = currentWorkbook.capitulos[chapterIdx];
+      if (!cap) return '';
+
+      let visualBody = '';
+
+      if (cap.gerando_imagem) {
+        visualBody = `
+          <div class="w-full h-64 rounded-lg bg-slate-100 border border-slate-200 flex flex-col items-center justify-center p-6 text-center animate-pulse">
+            <div class="w-10 h-10 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center mb-3">
+              <i class="ph ph-spinner animate-spin text-xl"></i>
+            </div>
+            <p class="text-xs font-bold text-slate-700">Gerando Ilustração Técnica com IA para o Capítulo ${chapterIdx + 1}...</p>
+            <p class="text-[11px] font-mono text-slate-500 mt-1 max-w-md truncate">${escapeHtml(cap.prompt_imagem)}</p>
+          </div>
+        `;
+      } else if (cap.imagem_url) {
+        const engineBadge = cap.motor_imagem
+          ? `<span class="no-print absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-slate-900/80 text-white backdrop-blur-sm shadow">${escapeHtml(cap.motor_imagem)}</span>`
+          : '';
+        visualBody = `
+          <div class="relative w-full overflow-hidden rounded-lg border border-slate-200 bg-white flex items-center justify-center">
+            ${engineBadge}
+            <img
+              src="${cap.imagem_url}"
+              alt="${escapeAttr(cap.legenda_imagem)}"
+              class="max-h-[310px] w-auto object-contain mx-auto"
+            />
+          </div>
+        `;
+      } else {
+        // Technical Blueprint SVG Placeholder when no AI image has been generated yet
+        visualBody = `
+          <div class="w-full py-9 px-6 rounded-lg bg-slate-50 border border-dashed border-slate-300 flex flex-col items-center justify-center text-center">
+            <svg class="w-14 h-14 text-slate-400 mb-2" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.75">
+              <rect x="8" y="12" width="48" height="40" rx="4" stroke-dasharray="4 3"/>
+              <circle cx="24" cy="28" r="5"/>
+              <path d="M14 46L26 35L35 43L44 31L52 46"/>
+            </svg>
+            <p class="text-xs font-semibold text-slate-700">Espaço Reservado para Figura / Diagrama do Capítulo ${chapterIdx + 1}</p>
+            <p class="text-[11px] text-slate-500 max-w-md mt-0.5">
+              Clique em <strong>"Gerar / Regenerar Imagem IA"</strong> abaixo ou faça <strong>"Upload de Imagem Própria"</strong> (diagrama, foto de bancada ou esquema técnico).
+            </p>
+          </div>
+        `;
+      }
+
+      return `
+        <figure class="rounded-xl border border-slate-200 bg-slate-50/50 p-3.5">
+          ${visualBody}
+
+          <figcaption
+            class="mt-2.5 text-center text-xs font-mono text-slate-600"
+            contenteditable="true"
+            onblur="currentWorkbook.capitulos[${chapterIdx}].legenda_imagem = this.innerText"
+          >${escapeHtml(cap.legenda_imagem || `Figura ${chapterIdx + 1}.1 — Ilustração técnica do capítulo.`)}</figcaption>
+
+          <!-- Interactive Figure Action Bar (Hidden on Print / PDF) -->
+          <div class="no-print mt-3 pt-2.5 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button
+                onclick="generateChapterImage(${chapterIdx})"
+                ${cap.gerando_imagem ? 'disabled' : ''}
+                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 transition shadow-sm"
+              >
+                <i class="ph ph-arrows-clockwise ${cap.gerando_imagem ? 'animate-spin' : ''}"></i>
+                <span>${cap.imagem_url ? 'Regenerar Imagem IA' : 'Gerar Imagem IA'}</span>
+              </button>
+
+              <button
+                onclick="triggerChapterCustomImageUpload(${chapterIdx})"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-white text-slate-700 border border-slate-300 hover:bg-slate-100 transition"
+              >
+                <i class="ph ph-upload-simple text-teal-600"></i>
+                <span>Upload de Imagem Própria</span>
+              </button>
+            </div>
+
+            <button
+              onclick="togglePromptEditor(${chapterIdx})"
+              class="text-[11px] font-mono text-slate-500 hover:text-brand-700 inline-flex items-center gap-1"
+            >
+              <i class="ph ph-Sliders"></i> Editar Prompt IA
+            </button>
+          </div>
+
+          <!-- Collapsible Prompt Editor per Chapter -->
+          <div id="prompt-editor-box-${chapterIdx}" class="no-print hidden mt-2.5 pt-2 border-t border-slate-200">
+            <label class="block text-[10px] font-mono uppercase text-slate-500 mb-1">Prompt da Ilustração (Inglês ou Português):</label>
+            <div class="flex gap-1.5">
+              <input
+                id="chapter-prompt-input-${chapterIdx}"
+                type="text"
+                value="${escapeAttr(cap.prompt_imagem)}"
+                onchange="currentWorkbook.capitulos[${chapterIdx}].prompt_imagem = this.value"
+                class="flex-1 px-2.5 py-1 text-xs font-mono rounded border border-slate-300 bg-white text-slate-800"
+              />
+              <button
+                onclick="generateChapterImage(${chapterIdx})"
+                class="px-3 py-1 rounded bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800"
+              >
+                Aplicar
+              </button>
+            </div>
+          </div>
+        </figure>
+      `;
+    }
+
+    function updateChapterFigureDOM(chapterIdx) {
+      const container = document.getElementById(`chapter-figure-container-${chapterIdx}`);
+      if (container) {
+        container.innerHTML = buildChapterFigureInnerHtml(chapterIdx);
+      }
+    }
+
+    /********************************************************************
+     * 8. INLINE CONTENTEDITABLE SYNCHRONIZATION & MANUAL CHAPTER CONTROLS
+     ********************************************************************/
+    function syncChapterTitle(idx, newText) {
+      if (!currentWorkbook.capitulos[idx]) return;
+      // Strip leading "1. " if present
+      const cleaned = newText.replace(/^\d+\.\s*/, '').trim();
+      currentWorkbook.capitulos[idx].titulo = cleaned || currentWorkbook.capitulos[idx].titulo;
+    }
+
+    function syncChapterParagraph(cIdx, pIdx, newText) {
+      if (currentWorkbook.capitulos[cIdx]?.conteudo) {
+        currentWorkbook.capitulos[cIdx].conteudo[pIdx] = newText;
+      }
+    }
+
+    function addNewBlankChapter() {
+      const nextNum = currentWorkbook.capitulos.length + 1;
+      currentWorkbook.capitulos.push({
+        titulo: `Novo Tópico Técnico ${nextNum}`,
+        conteudo: [
+          "Clique neste parágrafo para redigir ou colar o conteúdo técnico deste módulo. Todos os textos desta apostila possuem suporte a edição direta na folha A4.",
+          "Adicione explicações detalhadas, parâmetros operacionais, fórmulas e procedimentos práticos de bancada ou campo."
+        ],
+        quadro_destaque: "DICA TÉCNICA: Destaque aqui uma norma regulamentadora (NR/ABNT) ou recomendação prática de segurança.",
+        prompt_imagem: "Clean technical educational diagram blueprint style on white background",
+        imagem_url: null,
+        gerando_imagem: false,
+        legenda_imagem: `Figura ${nextNum}.1 — Diagrama explicativo do módulo ${nextNum}.`,
+        questoes: [
+          {
+            pergunta: "Questão de fixação referente ao novo módulo técnico adicionado.",
+            gabarito: "Gabarito comentado explicando os critérios técnicos da resposta esperada."
+          }
+        ]
+      });
+      renderWorkbookA4();
+      showToast(`Capítulo ${nextNum} adicionado! Role a página para editá-lo.`, "success");
+    }
+
+    function removeChapter(idx) {
+      if (currentWorkbook.capitulos.length <= 1) {
+        showToast("A apostila deve conter pelo menos 1 capítulo.", "warning");
+        return;
+      }
+      currentWorkbook.capitulos.splice(idx, 1);
+      renderWorkbookA4();
+      showToast("Capítulo removido da apostila.", "info");
+    }
+
+    /********************************************************************
+     * 9. PDF EXPORT ENGINES (html2pdf.js & Native High-Res @media print)
+     ********************************************************************/
+    async function exportHtml2Pdf() {
+      const element = document.getElementById('workbook-a4-root');
+      const btn = document.getElementById('btn-html2pdf');
+      if (!element) return;
+
+      // Hide all .no-print elements inside the A4 container temporarily so html2pdf doesn't render chapter action buttons
+      const internalNoPrintEls = element.querySelectorAll('.no-print');
+      internalNoPrintEls.forEach(el => el.classList.add('!hidden'));
+
+      // Temporarily adjust sheet shadow/margin for clean A4 capture
+      const sheets = element.querySelectorAll('.a4-sheet');
+      sheets.forEach(s => {
+        s.style.boxShadow = 'none';
+        s.style.marginBottom = '0';
+      });
+
+      const originalBtnHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<i class="ph ph-spinner animate-spin text-base text-rose-600"></i> <span>Renderizando PDF...</span>`;
+      showToast("Gerando arquivo PDF A4 via html2pdf... Aguarde alguns instantes.", "info");
+
+      const safeFilename = (currentWorkbook.titulo || 'apostila-tecnica')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '') + '.pdf';
+
+      const opt = {
+        margin: [0, 0, 0, 0],
+        filename: safeFilename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          letterRendering: true,
+          scrollY: 0
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: 'portrait'
+        },
+        pagebreak: {
+          mode: ['css', 'legacy'],
+          avoid: ['.avoid-break']
+        }
+      };
+
+      try {
+        await html2pdf().set(opt).from(element).save();
+        showToast("Download do PDF concluído com sucesso!", "success");
+      } catch (err) {
+        console.error("Erro no html2pdf:", err);
+        showToast("Houve um erro ao gerar via html2pdf. Recomendamos clicar em 'Salvar PDF Nativo (Alta Resolução)'.", "warning");
+      } finally {
+        internalNoPrintEls.forEach(el => el.classList.remove('!hidden'));
+        sheets.forEach(s => {
+          s.style.boxShadow = '';
+          s.style.marginBottom = '';
+        });
+        btn.disabled = false;
+        btn.innerHTML = originalBtnHtml;
+      }
+    }
+
+    function triggerNativePrint() {
+      window.print();
+    }
+
+    /********************************************************************
+     * 10. UI HELPERS (MOBILE DRAWER, TOAST, ESCAPING)
+     ********************************************************************/
+    function toggleMobileSidebar(forceState) {
+      const sidebar = document.getElementById('config-sidebar');
+      if (!sidebar) return;
+      const isClosed = sidebar.classList.contains('-translate-x-full');
+      const shouldOpen = typeof forceState === 'boolean' ? forceState : isClosed;
+      if (shouldOpen) {
+        sidebar.classList.remove('-translate-x-full');
+      } else {
+        sidebar.classList.add('-translate-x-full');
+      }
+    }
+
+    let toastTimeout = null;
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast-notification');
+      const icon = document.getElementById('toast-icon');
+      const msg = document.getElementById('toast-message');
+
+      msg.textContent = message;
+      icon.className = 'ph-fill text-xl shrink-0 ';
+      if (type === 'error') icon.classList.add('ph-warning-octagon', 'text-rose-400');
+      else if (type === 'warning') icon.classList.add('ph-warning', 'text-amber-400');
+      else if (type === 'info') icon.classList.add('ph-info', 'text-sky-400');
+      else icon.classList.add('ph-check-circle', 'text-emerald-400');
+
+      toast.classList.remove('hidden');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(hideToast, 5500);
+    }
+
+    function hideToast() {
+      const toast = document.getElementById('toast-notification');
+      if (toast) toast.classList.add('hidden');
+    }
+
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function escapeAttr(str) {
+      return escapeHtml(str);
+    }
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', () => {
+      initApiKeyManagerUI();
+      setupDragAndDrop();
+      renderWorkbookA4();
+    });
+  </script>
+</body>
+</html>
